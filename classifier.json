@@ -1,0 +1,29 @@
+{
+  "_doc": "HORKOS deterministic tier classifier. Shipped data, PR-able. Inputs are MECHANICAL facts only (operation, novelty, scope, system, conflict). Agent confidence is deliberately NOT an input. Copy to ~/.horkos/classifier.json to override.",
+  "_tiers": {
+    "1": "receipt check: version bump / SHA / status from the write response already in the ledger, zero extra calls",
+    "2": "presence probe: targeted API GET / search / conditional request",
+    "3": "full re-fetch + normalized content comparison"
+  },
+  "critical_overrides": [
+    { "when": { "novelty": "net-new" }, "tier": 3, "why": "new artifact creation always gets a full content re-fetch (feedback_thoroughness: API success is NOT proof for new page creation)" },
+    { "when": { "op": "delete" }, "tier": 3, "why": "destructive ops always get the deepest audit" }
+  ],
+  "escalators": [
+    { "when": { "conflict": true }, "bump": 1, "why": "a 409/error observed during the write means the final state is uncertain: escalate one tier" }
+  ],
+  "base_rules": [
+    { "when": { "system": "fs" }, "tier": 1, "why": "local filesystem receipts are content-addressed and free to check" },
+    { "when": { "system": "git" }, "tier": 1, "why": "git SHAs are tamper-evident; existence check is free" },
+    { "when": { "op": "edit", "scope": "small" }, "tier": 1, "why": "targeted small edit: version-bump receipt is sufficient proof" },
+    { "when": { "op": "edit", "scope": "sections" }, "tier": 2, "why": "multi-section edit: presence probe confirms the sections landed" },
+    { "when": { "op": "edit", "scope": "full-body" }, "tier": 3, "why": "full-body rewrite: always a full re-fetch, no exceptions, regardless of confidence in the diff" },
+    { "when": {}, "tier": 2, "why": "default: probe" }
+  ],
+  "scope_thresholds": {
+    "_doc": "deterministic scope from the byte size of the body the agent sent",
+    "small_max_chars": 2000,
+    "sections_max_chars": 8000
+  },
+  "max_retries": 3
+}

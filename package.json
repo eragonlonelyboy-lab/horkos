@@ -1,0 +1,15 @@
+{
+  "name": "demiurge-horkos",
+  "version": "0.1.0",
+  "description": "Your agent swore it was done. HORKOS checks. Evidence-audit loop for AI agents: exit only when the artifact testifies.",
+  "bin": { "horkos": "bin/horkos.js" },
+  "main": "lib/audit.js",
+  "scripts": {
+    "test": "node benchmarks/run.js"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["claude-code", "hooks", "agent", "verification", "audit", "stop-hook", "evidence", "demiurge"],
+  "author": "Eragon (Demiurge)",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/eragonlonelyboy-lab/horkos" }
+}

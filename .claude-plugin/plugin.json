@@ -1,0 +1,6 @@
+{
+  "name": "horkos",
+  "description": "Your agent swore it was done. HORKOS checks. Evidence-audit Stop hook: session exit only when the artifact testifies.",
+  "version": "0.1.0",
+  "author": { "name": "Eragon (Demiurge)" }
+}
