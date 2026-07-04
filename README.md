@@ -18,7 +18,7 @@ PHANTOM CLAIM: you said "I updated the Confluence page with the Q3 section." but
 ledger shows ZERO writes to confluence. The write never happened. Do it for real.
 ```
 
-The session does not end. The agent redoes the write: the real one this time: and only exits when the re-fetched page carries the new version and the new content. Every check is a script. The agent cannot sweet-talk a bash loop.
+The session does not end. The agent redoes the write, the real one this time, and only exits when the re-fetched page carries the new version and the new content. Every check is a script. The agent cannot sweet-talk a bash loop.
 
 ## Why every other loop lets the lie through
 
@@ -34,7 +34,7 @@ HORKOS is the fourth exit condition: **the artifact itself.** Re-fetched, hashed
 
 ## How it works
 
-1. **Write ledger** (PostToolUse hook): every external write: Confluence, Jira, TestRail, files, git: is recorded live with the receipt its own response carried (version number, id, SHA). Zero extra API calls.
+1. **Write ledger** (PostToolUse hook): every external write (Confluence, Jira, TestRail, files, git) is recorded live with the receipt its own response carried (version number, id, SHA). Zero extra API calls.
 2. **Claims extractor** (Stop hook): when the agent tries to finish, its claims are parsed from the transcript and cross-checked against the ledger. A claim with no write behind it = phantom. A write that errored and was reported as success = silent failure.
 3. **Tier classifier**: proportional evidence, shipped as data ([classifier.json](classifier.json), edit it, PR it):
    - **Tier 1: receipt:** small targeted edit → the version bump in the write response is proof enough.
@@ -42,7 +42,7 @@ HORKOS is the fourth exit condition: **the artifact itself.** Re-fetched, hashed
    - **Tier 3: re-fetch:** full rewrite, **any net-new creation, any delete** → the whole artifact is re-fetched and compared, normalized, section by section. No exceptions, regardless of how confident the diff looked.
    - Inputs are mechanical facts only (operation, novelty, size, system, conflict signals). Agent confidence is deliberately not an input.
 4. **Bounded loop:** audit fails → exit blocked, the exact gaps fed back. Three strikes → HORKOS writes a `HANDOFF.md` (claims vs. evidence vs. what remains) and lets the human take over. It never claims unconditional termination and never traps you in an unwinnable loop.
-5. **Receipts:** every audit is an append-only JSONL trail: claim, evidence, hash, verdict: re-executable offline.
+5. **Receipts:** every audit is an append-only JSONL trail (claim, evidence, hash, verdict), re-executable offline.
 
 ## Install
 

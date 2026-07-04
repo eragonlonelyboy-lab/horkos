@@ -5,7 +5,7 @@ description: Use when a HORKOS evidence audit blocks session completion, when th
 
 # HORKOS: the oath-keeper
 
-HORKOS audits your writes when you try to finish. It re-checks the actual artifacts: version numbers, live content, file bytes: against what you claimed. It is deterministic code; it cannot be argued with, only satisfied.
+HORKOS audits your writes when you try to finish. It re-checks the actual artifacts (version numbers, live content, file bytes) against what you claimed. It is deterministic code; it cannot be argued with, only satisfied.
 
 ## When HORKOS blocks you
 

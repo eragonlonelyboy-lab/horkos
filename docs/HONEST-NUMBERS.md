@@ -11,7 +11,7 @@ The oath-keeper keeps its own oath: here is exactly when NOT to use HORKOS, and 
 ## What it costs
 
 - **Seconds per session exit, not milliseconds.** Tier 1 is free (receipt already in the ledger). Tier 2 is one API GET. Tier 3 re-fetches the whole artifact: on a large Confluence page that is one full page GET, and on a slow instance that can take a few seconds. The classifier exists precisely so you pay Tier 3 only when the write shape demands it.
-- **API calls against your rate limits.** Atlassian enforces points-based limits (Mar 2026); TestRail allows 180 req/min on Professional. HORKOS uses single targeted GETs and honors `Retry-After` on 429: but an audit is still real traffic.
+- **API calls against your rate limits.** Atlassian enforces points-based limits (Mar 2026); TestRail allows 180 req/min on Professional. HORKOS uses single targeted GETs and honors `Retry-After` on 429, but an audit is still real traffic.
 - **~30–120s hook timeout budget** on Stop. If your network is down, the auditor reports `unverifiable` and allows exit with an honest message. It never fakes a pass and never hard-traps your session on infrastructure failure.
 
 ## What the checks can and cannot prove
