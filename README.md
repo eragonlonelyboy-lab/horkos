@@ -56,7 +56,7 @@ git clone https://github.com/eragonlonelyboy-lab/horkos && cd horkos && node bin
 ```
 Node 18+, zero dependencies. Registers two hooks in `~/.claude/settings.json`. Re-run safe. Broke something? Open your agent in this repo and say: *read the README and fix my HORKOS install.*
 
-Optional but recommended: API creds in `~/.horkos/config.json` unlock the probe and re-fetch tiers for Confluence / Jira / TestRail. Without creds, HORKOS still runs receipt checks, phantom detection, and silent-failure detection: and honestly labels the difference.
+HORKOS works out of the box on files and git with zero setup, and that alone catches phantom claims, silent failures, and content mismatches. The deeper tiers are how we run it ourselves: our work ships to Confluence and TestRail all day, so our `~/.horkos/config.json` carries read-only tokens and every session exit re-fetches what the agent claimed to write there. If your work lives in those systems too, add yours the same way. If not, skip it: HORKOS honestly labels receipt-level checks as receipt-level, and never pretends deeper.
 
 ## Benchmarks
 
