@@ -1,4 +1,4 @@
-# HORKOS
+# HORKOS: Honest Output Receipts, Kept-Oath System
 
 **Your agent swore it was done. HORKOS checks.**
 
