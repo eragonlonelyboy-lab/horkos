@@ -49,7 +49,7 @@ function uninstall() {
 
 function status() {
   const stats = readJSON(statsPath(), { caught: 0, verified: 0, handoffs: 0 });
-  console.log('HORKOS — the oath-keeper');
+  console.log('HORKOS: the oath-keeper');
   console.log(`  false completions caught : ${stats.caught}`);
   console.log(`  sessions verified clean  : ${stats.verified}`);
   console.log(`  human handoffs           : ${stats.handoffs}`);
@@ -58,7 +58,7 @@ function status() {
     .sort((a, b) => fs.statSync(b.p).mtimeMs - fs.statSync(a.p).mtimeMs)[0];
   if (latest) {
     const a = readJSON(latest.p, {});
-    console.log(`  last audit: ${a.verdict} (${a.summary.pass}/${a.summary.writes} pass, ${a.summary.phantom_claims} phantom, ${a.summary.fail} fail) — session ${latest.id.slice(0, 8)}`);
+    console.log(`  last audit: ${a.verdict} (${a.summary.pass}/${a.summary.writes} pass, ${a.summary.phantom_claims} phantom, ${a.summary.fail} fail): session ${latest.id.slice(0, 8)}`);
   }
 }
 
@@ -69,7 +69,7 @@ async function audit(args) {
   if (!sessionId) { console.error('usage: horkos audit --session <id> [--transcript <path>] [--receipts <out.jsonl>]'); process.exit(2); }
   const a = await runAudit(sessionId, transcript);
   if (out) fs.writeFileSync(out, a.entries.map(e => JSON.stringify({ claim: `${e.system} ${e.op} ${e.target}`, tier: e.tier, verdict: e.verdict.status, evidence: e.verdict.detail, ts: e.ts })).join('\n') + '\n', 'utf8');
-  console.log(`HORKOS audit: ${a.verdict.toUpperCase()} — ${a.summary.pass}/${a.summary.writes} pass, ${a.summary.phantom_claims} phantom, ${a.summary.silent_failures} silent failures`);
+  console.log(`HORKOS audit: ${a.verdict.toUpperCase()}: ${a.summary.pass}/${a.summary.writes} pass, ${a.summary.phantom_claims} phantom, ${a.summary.silent_failures} silent failures`);
   for (const g of gapReport(a)) console.log('  ' + g);
   process.exit(a.verdict === 'pass' ? 0 : 1);
 }
