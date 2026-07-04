@@ -4,7 +4,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { HOME, readJSON, writeJSON, statsPath } = require('../lib/config');
+const { HOME, readJSON, writeJSON, statsPath, loadConfig } = require('../lib/config');
 const { runAudit, gapReport } = require('../lib/audit');
 
 const REPO = path.resolve(__dirname, '..');
@@ -90,9 +90,57 @@ function siblingCheck() {
 
 function val(args, flag) { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; }
 
+// Guided setup: state-aware, explains every step in plain language, safe to re-run.
+// Zero-config is the default path; every optional step says what it adds and what you lose without it.
+function setup() {
+  const ok = m => console.log('  [done] ' + m);
+  const todo = m => console.log('  [next] ' + m);
+  const info = m => console.log('         ' + m);
+  console.log('HORKOS guided setup (re-run this any time; it only reads, never changes)\n');
+
+  // Step 1: hooks
+  const s = readJSON(SETTINGS, {});
+  const hooked = ['PostToolUse', 'Stop'].every(ev => (s.hooks && s.hooks[ev] || []).some(g => (g.hooks || []).some(h => String(h.command || '').includes(MARK))));
+  console.log('Step 1 of 3: the hooks (required, one command, automatic forever after)');
+  if (hooked) ok('Registered. Every session now records writes and audits claims at exit, by itself.');
+  else {
+    todo('Run: horkos install');
+    info('What it does: adds two entries to ~/.claude/settings.json. One records every external');
+    info('write your agent makes (with its receipt). One checks the evidence when the agent says');
+    info('"done". Both run automatically in every future session. Nothing to start manually.');
+  }
+
+  // Step 2: first evidence
+  const sess = fs.existsSync(path.join(HOME, 'sessions')) ? fs.readdirSync(path.join(HOME, 'sessions')).length : 0;
+  console.log('\nStep 2 of 3: first evidence (nothing to do, just work)');
+  if (sess > 0) ok(`${sess} session(s) recorded. HORKOS is watching.`);
+  else info('Work one normal session after installing. HORKOS records by itself; check back with horkos status.');
+
+  // Step 3: optional deep audit
+  console.log('\nStep 3 of 3: deep audit credentials (OPTIONAL: skip freely)');
+  info('Out of the box HORKOS already verifies files and git, and catches phantom claims and');
+  info('silent failures everywhere. Credentials add one thing: re-fetching what your agent wrote');
+  info('in external systems to prove the content actually landed.');
+  const cfg = loadConfig().systems || {};
+  const sys = [
+    ['confluence', 'you write Confluence pages', 'your Atlassian email + an API token (id.atlassian.com > Security > API tokens)'],
+    ['jira', 'you write Jira issues', 'same Atlassian email + API token as Confluence'],
+    ['testrail', 'you write TestRail cases', 'your TestRail user + API key (TestRail > My Settings > API Keys)']
+  ];
+  for (const [k, when, need] of sys) {
+    const c = cfg[k] || {};
+    const filled = c.baseUrl && (c.apiToken || c.apiKey);
+    if (filled) ok(`${k}: configured. Writes there get probe + re-fetch verification.`);
+    else info(`${k}: not set. Add it only if ${when}. Needs: ${need}. File: ~/.horkos/config.json`);
+  }
+  console.log('\nPrefer a guided conversation? Open your agent in this repo and say: "set up HORKOS for me".');
+  console.log(hooked ? '\nSetup state: READY. The oath-keeper is on duty.' : '\nSetup state: one command away (horkos install).');
+}
+
 const [cmd, ...args] = process.argv.slice(2);
-({ install, uninstall, status, audit: () => audit(args) }[cmd] || (() => {
-  console.log('horkos <install|uninstall|status|audit>');
+({ install, uninstall, status, setup, audit: () => audit(args) }[cmd] || (() => {
+  console.log('horkos <setup|install|uninstall|status|audit>');
+  console.log('  setup      guided, state-aware walkthrough: explains every step, safe to re-run');
   console.log('  install    register PostToolUse ledger + Stop audit hooks in ~/.claude/settings.json');
   console.log('  status     caught / verified / handoff counters + last audit');
   console.log('  audit      headless audit: --session <id> [--transcript <path>] [--receipts out.jsonl]');
