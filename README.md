@@ -6,6 +6,8 @@
 
 *Your agent swore it was done. Horkos checks the receipts.*
 
+**Guardrails for AI agents. No proof, no "done."**
+
 ![license](https://img.shields.io/badge/license-MIT-E8A23D)
 ![node](https://img.shields.io/badge/node-%E2%89%A518-2C7A7B)
 ![benchmarks](https://img.shields.io/badge/benchmarks-22%2F22-E8A23D)
@@ -103,7 +105,7 @@ horkos setup                       # guided, state-aware walkthrough (changes no
 horkos uninstall                   # removes hooks; the ledger is never deleted
 ```
 
-## FAQ (in the god's own words)
+## FAQ
 
 **Does this slow me down?**
 I cost you a few seconds at the door while I weigh what you swore against what you did. You took an oath. Bear the weight.
