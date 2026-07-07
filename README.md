@@ -62,6 +62,8 @@ Horkos is the fourth exit condition: **the artifact itself.** Re-fetched, hashed
 4. **Bounded loop**: audit fails, exit blocked, the exact gaps fed back. Three strikes, Horkos writes a `HANDOFF.md` and lets the human take over. He never traps you.
 5. **Receipts**: every audit is an append-only JSONL trail (claim, evidence, hash, verdict), re-executable offline.
 
+**Two habits Horkos cannot do for you.** A pass proves the writes happened, not that every one was correct. On a multi-item write, spot-check the tails yourself: the first item, the last, and the weirdest. And treat a surprisingly clean audit as suspect until you can say why it is clean, because an all-green you cannot explain is unverified, not verified.
+
 ## Install for your agent
 
 Horkos ships as live **hooks**, so it installs wherever an agent can run a shell command on tool-use and session-stop.
