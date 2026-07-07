@@ -24,7 +24,7 @@ The oath-keeper keeps its own oath: here is exactly when NOT to use HORKOS, and 
 
 ## False-positive classes caught by dogfood
 
-HORKOS audits real sessions, and real sessions have exposed real auditor mistakes. Every class found live gets fixed AND seeded into `benchmarks/run.js` so it can never silently return. Caught so far (all 2026-07-05, all fixed):
+HORKOS audits real sessions, and real sessions have exposed real auditor mistakes. Every class found live gets fixed AND seeded into `benchmarks/run.js` so it can never silently return. Caught so far (all fixed, each a permanent bench scenario):
 
 1. **Superseded write** (CALLIOPE build session): a session revising its own file failed the first write's stale head probe. Fix: the latest successful write per target owns the content claim.
 2. **Wrong repo, wrong clock** (CALLIOPE build session): git commits were verified against the auditor's cwd and audit time instead of the recorded repo and the claim's own timestamp.
@@ -32,6 +32,9 @@ HORKOS audits real sessions, and real sessions have exposed real auditor mistake
 4. **Write-then-Edit head mismatch** (session 0ae7e740): an in-session Edit invalidated the earlier Write's head expectation, and the successful Edit itself was misread as an unretried error. Fix: any later successful write supersedes, regardless of op; Edits are probed by their own `new_string`.
 5. **Quoted/hypothetical claim** (session 0ae7e740): a launch recommendation (record a demo GIF where "an agent claims a Confluence write and HORKOS blocks it") was read as a first-person claim that a Confluence write happened. Fix: quoted spans stripped; scenario markers before the claim verb, future-tense plans, and writes attributed to another session/agent disqualify.
 6. **Negated and offered writes** (repro session 224b2711): "changes are uncommitted — say the word if you want them committed" was read as a commit claim. Fix: negations and conditional offers are masked before matching.
+7. **CRLF file, LF head** (dogfood 2026-07-06): a multi-line Edit to a CRLF file (Windows repo) records its head with LF, so the raw containment probe never matched. Fix: normalize line endings on both sides before the probe.
+8. **Write-then-intentional-delete** (dogfood 2026-07-06): a file truthfully Written and then removed with `rm` or `Remove-Item` in the same session read as an evidence fail. Fix: a delete command naming the exact path plus an ok write receipt is cleanup, not a lie.
+9. **Git global flags before the subcommand** (dogfood 2026-07-07, the AURA and KINEMA push): `git -C <path> commit` and `git -c k=v push` were invisible to the ledger because detection required the subcommand to immediately follow `git`, so a real push read as a phantom. Fix: detection allows global flags between `git` and the subcommand, and records the repo from `-C` or `--git-dir`.
 
 This list is expected to grow. A deterministic classifier's false positives are findable, fixable, and benchmarkable: that is the trade against an LLM judge, whose mistakes are none of those things.
 
