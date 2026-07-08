@@ -20,6 +20,23 @@
 
 **No receipts, no "done."** Zero LLM calls, zero network, 25 benchmarks you can rerun in seconds.
 
+## The coverage check (2026-07-08)
+
+HORKOS asks "did the write happen". On 2026-07-08 it answered that correctly while an agent
+claimed six products had absorbed 145 source prompts. Every file existed. Every write was
+truthful. The lie was semantic: the artifacts did not contain what their sources demanded,
+and a tracker said ABSORBED anyway.
+
+A coverage claim is a factual claim about a file's contents, so it is checkable. HORKOS now
+refuses to let one stand without a passing coverage gate. Deterministic, zero-LLM: it runs
+the gate and reads the exit code. It only fires when the transcript actually asserts coverage.
+
+Guards, learned the hard way: a zero result is a confession not a claim, a negation is not a
+claim, stating the rule is not a claim, a quoted or fenced span is not this agent's claim, and
+a table row asserting a positive ratio IS one. Disable with `coverage.enabled = false` in
+`~/.horkos/config.json` if you never make coverage claims. Never trapped.
+
+
 ## The lie, caught
 
 An agent is told to update a Confluence page. The MCP write silently fails. The agent announces success anyway, a documented and common failure mode. Here is what Horkos does with that:
