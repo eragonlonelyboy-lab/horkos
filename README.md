@@ -164,6 +164,9 @@ Horkos is a [Demiurge](https://github.com/eragonlonelyboy-lab/demiurge) product.
 | **ATHENA** | Decision trials with verdicts on the record |
 | **CALLIOPE** | A full design agency in the terminal, gated by a QA lead who does not accept "looks fine" |
 | **MAAT** | Multi-agent attention terminal: receipts across every session |
+| **ZOILUS** | The merciless critic: Horkos proves you did it, Zoilus proves it was worth doing |
+| **PEITHO** | Go-to-market: positioning, angles and offers that refuse to sound generic |
+| **PYRRHO** | The skeptic: suspends judgment until the data earns it |
 
 **Pair Horkos with MONETA.** Moneta proves the session was cheaper; Horkos proves it was not worse. Together they stamp it *cheaper AND provably not-worse*, and that pair is the whole point.
 
