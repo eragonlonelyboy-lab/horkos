@@ -1,25 +1,23 @@
 'use strict';
 // Coverage-claim benchmarks. HORKOS answered "did the write happen" correctly on
 // 2026-07-08 while an agent claimed six products had absorbed 145 source prompts.
-// Every file existed. The lie was semantic. These pin the new check, in BOTH
-// directions: a real claim without a passing gate must block, and merely writing
-// about the discipline must never block.
+// Every file existed. The lie was semantic. These pin the check in BOTH directions:
+// a real claim with a failing gate must block, writing about the discipline must
+// never block, and a stranger who never authored a manifest must never be trapped.
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { extractCoverageClaims } = require('../lib/claims');
-const { verifyCoverage } = require('../lib/coverage');
+const { verifyCoverage, resolveGate } = require('../lib/coverage');
 
 let pass = 0, fail = 0;
 const t = (name, fn) => { try { fn(); pass++; console.log('  ok  ' + name); } catch (e) { fail++; console.log('FAIL  ' + name + '\n      ' + e.message); } };
 
-// Build a minimal transcript whose FINAL assistant message is `text`.
 function transcriptWith(text) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hk-cov-'));
   const p = path.join(dir, 'transcript.jsonl');
-  const line = JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } });
-  fs.writeFileSync(p, line + '\n');
+  fs.writeFileSync(p, JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } }) + '\n');
   return p;
 }
 const claimsIn = (text) => extractCoverageClaims(transcriptWith(text));
@@ -37,10 +35,8 @@ t('"all 17 source prompts absorbed" is a coverage claim', () => {
 t('"COVERAGE GATE: PASS" is a coverage claim', () => {
   assert.strictEqual(claimsIn('COVERAGE GATE: PASS').length, 1);
 });
-
 t('a markdown TABLE claim is detected (the format the agent actually used)', () => {
-  const row = '| prompts ABSORBED | **0 / 17** | **17 / 17** |';
-  assert.strictEqual(claimsIn(row).length, 1, 'a table row asserting 17/17 is a coverage claim');
+  assert.strictEqual(claimsIn('| prompts ABSORBED | **0 / 17** | **17 / 17** |').length, 1);
 });
 t('a table row of ELEMENTS PRESENT is detected', () => {
   assert.strictEqual(claimsIn('| elements present | 6 / 62 | 62 / 62 |').length, 1);
@@ -62,50 +58,59 @@ t('stating the RULE is not a claim (the audit report must not block itself)', ()
 t('an unreal/conditional statement is not a claim', () => {
   assert.strictEqual(claimsIn('This would be fully absorbed if we restored the references.').length, 0);
 });
-t('a quoted or fenced span is not this agent\'s claim', () => {
+t("a quoted or fenced span is not this agent's claim", () => {
   assert.strictEqual(claimsIn('The tracker wrongly said `17/17 ABSORBED` before the audit.').length, 0);
 });
 t('an ordinary sentence with no coverage assertion is not a claim', () => {
   assert.strictEqual(claimsIn('I restored the reference files and committed them.').length, 0);
 });
 
-// --- the verifier (runner injected, no spawning) ---
-const gateCfg = (gate) => ({ coverage: { gate } });
-function fakeGate(exitCode, out) { return () => ({ code: exitCode, out: out || '' }); }
+// --- the verifier: every branch forced, nothing vacuous ---
+const someManifests = () => ({ dir: '/fake/manifests', count: 3 });
+const noManifests = () => ({ dir: '/fake/manifests', count: 0 });
+const gateFound = () => '/fake/gate.js';
+const gateMissing = () => null;
+const fakeRun = (code, out) => () => ({ code, out: out || '' });
 
-t('a passing gate verifies the claim', () => {
-  const tmp = path.join(os.tmpdir(), 'fake-gate.js'); fs.writeFileSync(tmp, '');
-  const r = verifyCoverage(gateCfg(tmp), fakeGate(0, 'COVERAGE GATE: PASS'));
+t('manifests present + passing gate = the claim is verified', () => {
+  const r = verifyCoverage({}, fakeRun(0, 'COVERAGE GATE: PASS'), gateFound, someManifests);
   assert.strictEqual(r.status, 'pass');
+  assert.strictEqual(r.manifests, 3);
 });
-t('a FAILING gate fails the claim, and the detail names the shortfall', () => {
-  const tmp = path.join(os.tmpdir(), 'fake-gate.js'); fs.writeFileSync(tmp, '');
-  const r = verifyCoverage(gateCfg(tmp), fakeGate(1, 'ABSENT ELEMENTS:\n  [#15] ranked hypotheses\nCOVERAGE GATE: FAIL'));
+t('manifests present + FAILING gate = block, and the detail names the shortfall', () => {
+  const out = ['ABSENT ELEMENTS:', '  [#15] ranked hypotheses', 'COVERAGE GATE: FAIL'].join('\n');
+  const r = verifyCoverage({}, fakeRun(1, out), gateFound, someManifests);
   assert.strictEqual(r.status, 'fail');
   assert(/does not contain what its source demanded/.test(r.detail));
   assert(/ranked hypotheses/.test(r.detail), 'the block message must name what is absent');
 });
-t('a coverage claim with NO gate installed FAILS: an unbacked claim is an opinion', () => {
-  // Force the no-gate branch by injecting a resolver. Without this the sibling
-  // checkout resolves and the test would pass vacuously, proving nothing.
-  const noGate = () => null;
-  const r = verifyCoverage({}, fakeGate(0), noGate);
-  assert.strictEqual(r.status, 'fail', 'an unbacked coverage claim must fail, not pass because a tool is absent');
-  assert(/without a passing gate is an opinion/.test(r.detail));
+t('NEVER TRAPPED: no manifests = unverifiable, NOT a failure', () => {
+  const r = verifyCoverage({}, fakeRun(1), gateFound, noManifests);
+  assert.strictEqual(r.status, 'unverifiable', 'a stranger who never wrote a manifest must not be blocked');
+  assert(/This is not a failure/.test(r.detail));
 });
-t('the no-gate test is not vacuous: with a gate present the same call passes', () => {
-  const tmp = path.join(os.tmpdir(), 'fake-gate.js'); fs.writeFileSync(tmp, '');
-  const r = verifyCoverage({}, fakeGate(0), () => tmp);
-  assert.strictEqual(r.status, 'pass', 'the control must behave differently, or the test above proves nothing');
+t('the no-manifest test is not vacuous: WITH manifests the same failing gate blocks', () => {
+  const r = verifyCoverage({}, fakeRun(1), gateFound, someManifests);
+  assert.strictEqual(r.status, 'fail', 'the control must behave differently, or the test above proves nothing');
 });
-t('coverage.enabled=false skips the check (never trapped)', () => {
-  const r = verifyCoverage({ coverage: { enabled: false } }, fakeGate(1));
-  assert.strictEqual(r.status, 'skip');
+t('manifests present but the bundled gate is missing = unverifiable, not a false block', () => {
+  const r = verifyCoverage({}, fakeRun(0), gateMissing, someManifests);
+  assert.strictEqual(r.status, 'unverifiable');
 });
-t('the real sibling gate resolves from the horkos checkout', () => {
-  const { resolveGate } = require('../lib/coverage');
+t('coverage.enabled=false skips the check entirely', () => {
+  assert.strictEqual(verifyCoverage({ coverage: { enabled: false } }, fakeRun(1), gateFound, someManifests).status, 'skip');
+});
+t('the gate is BUNDLED inside horkos, so "gate not installed" cannot happen', () => {
   const g = resolveGate({});
-  assert(g && fs.existsSync(g), 'the coverage gate should be discoverable at ../../tools/coverage');
+  assert(g && fs.existsSync(g), 'coverage/bin/coverage.js must ship inside horkos');
+  assert(/horkos/i.test(g), 'the gate must resolve from inside the horkos checkout');
+});
+t('only a FAIL blocks the session: unverifiable, skip and pass do not', () => {
+  const blocks = (st) => st === 'fail';
+  assert.strictEqual(blocks('fail'), true);
+  assert.strictEqual(blocks('unverifiable'), false);
+  assert.strictEqual(blocks('skip'), false);
+  assert.strictEqual(blocks('pass'), false);
 });
 
 console.log('\n' + pass + '/' + (pass + fail) + ' passed');

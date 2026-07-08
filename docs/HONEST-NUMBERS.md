@@ -12,7 +12,7 @@ The oath-keeper keeps its own oath: here is exactly when NOT to use HORKOS, and 
 
 - **Seconds per session exit, not milliseconds.** Tier 1 is free (receipt already in the ledger). Tier 2 is one API GET. Tier 3 re-fetches the whole artifact: on a large Confluence page that is one full page GET, and on a slow instance that can take a few seconds. The classifier exists precisely so you pay Tier 3 only when the write shape demands it.
 - **API calls against your rate limits.** Atlassian enforces points-based limits (Mar 2026); TestRail allows 180 req/min on Professional. HORKOS uses single targeted GETs and honors `Retry-After` on 429, but an audit is still real traffic.
-- **~30–120s hook timeout budget** on Stop. If your network is down, the auditor reports `unverifiable` and allows exit with an honest message. It never fakes a pass and never hard-traps your session on infrastructure failure.
+- **~30-120s hook timeout budget** on Stop. If your network is down, the auditor reports `unverifiable` and allows exit with an honest message. It never fakes a pass and never hard-traps your session on infrastructure failure.
 
 ## What the checks can and cannot prove
 
@@ -31,7 +31,7 @@ HORKOS audits real sessions, and real sessions have exposed real auditor mistake
 3. **Poisoned fs receipts** (session 0ae7e740): file content that merely *mentions* "error" or "conflict" was sniffed out of Write/Edit responses and flagged as a failed write. Fix: fs receipts no longer sniff response text; disk is the ground truth.
 4. **Write-then-Edit head mismatch** (session 0ae7e740): an in-session Edit invalidated the earlier Write's head expectation, and the successful Edit itself was misread as an unretried error. Fix: any later successful write supersedes, regardless of op; Edits are probed by their own `new_string`.
 5. **Quoted/hypothetical claim** (session 0ae7e740): a launch recommendation (record a demo GIF where "an agent claims a Confluence write and HORKOS blocks it") was read as a first-person claim that a Confluence write happened. Fix: quoted spans stripped; scenario markers before the claim verb, future-tense plans, and writes attributed to another session/agent disqualify.
-6. **Negated and offered writes** (repro session 224b2711): "changes are uncommitted — say the word if you want them committed" was read as a commit claim. Fix: negations and conditional offers are masked before matching.
+6. **Negated and offered writes** (repro session 224b2711): "changes are uncommitted, say the word if you want them committed" was read as a commit claim. Fix: negations and conditional offers are masked before matching.
 7. **CRLF file, LF head** (dogfood 2026-07-06): a multi-line Edit to a CRLF file (Windows repo) records its head with LF, so the raw containment probe never matched. Fix: normalize line endings on both sides before the probe.
 8. **Write-then-intentional-delete** (dogfood 2026-07-06): a file truthfully Written and then removed with `rm` or `Remove-Item` in the same session read as an evidence fail. Fix: a delete command naming the exact path plus an ok write receipt is cleanup, not a lie.
 9. **Git global flags before the subcommand** (dogfood 2026-07-07, the AURA and KINEMA push): `git -C <path> commit` and `git -c k=v push` were invisible to the ledger because detection required the subcommand to immediately follow `git`, so a real push read as a phantom. Fix: detection allows global flags between `git` and the subcommand, and records the repo from `-C` or `--git-dir`.

@@ -1,0 +1,20 @@
+{
+  "destination": "EXAMPLE: a product vs its source prompt",
+  "root": "../..",
+  "artifacts": [
+    "SKILL.md",
+    "lib"
+  ],
+  "elements": [
+    {
+      "prompt": 140,
+      "name": "the source demanded a set-based rewrite",
+      "pattern": "set.based rewrite"
+    },
+    {
+      "prompt": 140,
+      "name": "the source demanded index/partition intake",
+      "pattern": "indexes or partitions"
+    }
+  ]
+}

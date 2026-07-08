@@ -20,22 +20,32 @@
 
 **No receipts, no "done."** Zero LLM calls, zero network, 25 benchmarks you can rerun in seconds.
 
-## The coverage check (2026-07-08)
+## The coverage check
 
 HORKOS asks "did the write happen". On 2026-07-08 it answered that correctly while an agent
 claimed six products had absorbed 145 source prompts. Every file existed. Every write was
 truthful. The lie was semantic: the artifacts did not contain what their sources demanded,
 and a tracker said ABSORBED anyway.
 
-A coverage claim is a factual claim about a file's contents, so it is checkable. HORKOS now
-refuses to let one stand without a passing coverage gate. Deterministic, zero-LLM: it runs
-the gate and reads the exit code. It only fires when the transcript actually asserts coverage.
+A coverage claim is a factual claim about a file's contents, so it is checkable. HORKOS ships
+a deterministic, zero-LLM gate in `coverage/`. When your transcript asserts coverage, HORKOS
+runs the gate and reads the exit code. It never guesses.
+
+**You are never trapped.** The gate only enforces what you opted into:
+
+| your state | what HORKOS does |
+|---|---|
+| no manifests in `~/.horkos/manifests` | reports the claim unverified, does not block |
+| manifests present, gate passes | the claim is verified |
+| manifests present, gate fails | blocks, and names the absent elements |
+| `coverage.enabled = false` | skips entirely |
+
+A manifest is a plain list: this source demanded these named elements. See
+`coverage/README.md` and `coverage/manifests.example/`.
 
 Guards, learned the hard way: a zero result is a confession not a claim, a negation is not a
 claim, stating the rule is not a claim, a quoted or fenced span is not this agent's claim, and
-a table row asserting a positive ratio IS one. Disable with `coverage.enabled = false` in
-`~/.horkos/config.json` if you never make coverage claims. Never trapped.
-
+a table row asserting a positive ratio IS one.
 
 ## The lie, caught
 
