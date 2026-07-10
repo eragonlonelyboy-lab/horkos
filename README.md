@@ -89,7 +89,7 @@ Horkos is the fourth exit condition: **the artifact itself.** Re-fetched, hashed
 4. **Bounded loop**: audit fails, exit blocked, the exact gaps fed back. Three strikes, Horkos writes a `HANDOFF.md` and lets the human take over. He never traps you.
 5. **Receipts**: every audit is an append-only JSONL trail (claim, evidence, hash, verdict), re-executable offline.
 
-**Two habits Horkos cannot do for you.** A pass proves the writes happened, not that every one was correct. On a multi-item write, spot-check the tails yourself: the first item, the last, and the weirdest. And treat a surprisingly clean audit as suspect until you can say why it is clean, because an all-green you cannot explain is unverified, not verified.
+**Three habits Horkos cannot do for you.** A pass proves the writes happened, not that every one was correct. On a multi-item write, spot-check the tails yourself: the first item, the last, and the weirdest. Treat a surprisingly clean audit as suspect until you can say why it is clean, because an all-green you cannot explain is unverified, not verified. And before you call the session itself done, re-read the original ask and check the deliverable against it, not against the last few messages: long sessions drift toward recency, and every write can audit green while the work quietly answered the wrong question.
 
 ## Install for your agent
 
