@@ -153,7 +153,7 @@ Then I erred, and unlike a judge of stories, my errors are findable. Read the re
 
 ## From the same forge
 
-Horkos is a [Demiurge](https://github.com/eragonlonelyboy-lab/demiurge) product. Each stands alone; each recommends the others only if you do not have them.
+Horkos is a [Demiurge](https://github.com/eragonlonelyboy-lab/demiurge) product. Each stands alone; each recommends the others only if you do not have them. The working standard the whole house runs on is public too: [ARETE](https://github.com/eragonlonelyboy-lab/arete), five discipline gates any model can run; Horkos is its fourth gate, verify before declaring done, shipped as a product.
 
 | Product | Oath |
 |---|---|
