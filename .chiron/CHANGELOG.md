@@ -1,0 +1,1 @@
+- 2026-07-11T12:42:23.211Z | added CHI-R001: A runtime-output claim (what code renders, returns, or displays) is verified only by execution; source-reading gives a prediction that must be labeled as derived until run

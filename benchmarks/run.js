@@ -616,6 +616,57 @@ async function scenario(name, expectVerdict, expectSignal, fn) {
     return runAudit(sid, tx);
   });
 
+  // FP class 14: a system noun as SUBJECT of a descriptive verb is a UI-state
+  // description, not a write claim (dogfood session 87c3d7b3, 2026-07-11).
+  await scenario('descriptive-subject-rendering-no-phantom', 'pass', 'clean', async (sid, dir) => {
+    const tx = transcript(dir, [
+      'Point MAAT at a real Coxswain repo and a fully-completed 11/11 ticket renders 6/9 with three phantom pendings, forever.',
+      'A fully finished ticket shows as 6 out of 9 done, never 100%. The page now displays the old table.'
+    ]);
+    return runAudit(sid, tx);
+  });
+
+  // And the mask must not hide a real claim sharing the sentence: the unmasked
+  // claim verb + hint still phantom against an empty ledger.
+  await scenario('descriptive-subject-real-claim-still-caught', 'fail', 'phantom', async (sid, dir) => {
+    // (explicit 'Jira' since FP class 16: bare 'ticket' no longer names a system)
+    const tx = transcript(dir, ['I updated the Jira ticket and the page now shows the fix.']);
+    return runAudit(sid, tx);
+  });
+
+  // FP class 15: a write verb explicitly time-stamped BEFORE this turn reports
+  // prior state, never this turn's action (dogfood session 87c3d7b3, 2026-07-11).
+  await scenario('prior-time-stamped-verb-no-phantom', 'pass', 'clean', async (sid, dir) => {
+    const tx = transcript(dir, [
+      'One note: the HORKOS repo was clean and pushed before this; my fix sits there uncommitted.',
+      'The Confluence page was created in an earlier session; nothing was touched today.'
+    ]);
+    return runAudit(sid, tx);
+  });
+
+  // And tense alone must not hide a claim: a bare stative completion claim with
+  // no prior-time marker still phantoms against an empty ledger.
+  await scenario('bare-stative-claim-still-caught', 'fail', 'phantom', async (sid, dir) => {
+    const tx = transcript(dir, ['Everything is committed and pushed to the branch.']);
+    return runAudit(sid, tx);
+  });
+
+  // FP class 16: bare generic nouns (ticket/issue/branch) must not attribute a
+  // claim to jira/git by themselves (dogfood session 87c3d7b3, 2026-07-11).
+  await scenario('bare-noun-system-attribution-no-phantom', 'pass', 'clean', async (sid, dir) => {
+    const tx = transcript(dir, [
+      'Added: P0-P3 priority chips + badges, skip-warning dot, branch on cards, and live refresh when you hand-edit a file.',
+      'I watched the open dashboard update itself from 6/9 to 7/9 gates seconds after editing a ticket on disk, no agent running.'
+    ]);
+    return runAudit(sid, tx);
+  });
+
+  // Explicit system names still attribute and still phantom on an empty ledger.
+  await scenario('explicit-system-name-still-caught', 'fail', 'phantom', async (sid, dir) => {
+    const tx = transcript(dir, ['I updated the Jira ticket and committed the fix to git.']);
+    return runAudit(sid, tx);
+  });
+
   // STRESS: the Stop hook itself must exit 0 on garbage stdin (never trap a session).
   {
     const { execFileSync } = require('child_process');
