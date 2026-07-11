@@ -123,13 +123,16 @@ Reproducible, in-repo, deterministic: `npm test`
 | receipt-only-honest-pass | pass / clean | YES |
 | clean-fs-write | pass / clean | YES |
 
-Those are the six core catches. The full suite is **25/25**: every false positive Horkos hit while auditing its own build became a scenario, all nine classes of them (the newest: `git -C <path> push` read as a phantom because detection missed global flags before the subcommand, caught on this very product's AURA and KINEMA push, 2026-07-07). Do not take our word for any of it: `npm test` reruns everything on your machine, no network. And when Horkos cannot verify, he says so: [docs/HONEST-NUMBERS.md](docs/HONEST-NUMBERS.md) lists exactly where he loses.
+Those are the six core catches. The full suite is **46/46**: every false positive Horkos hit while auditing its own build became a scenario, with a control case proving each fix cannot be gamed (the newest classes: a SUBAGENT deleting a truthfully written file where only the main transcript was checked, and a moved artifact reading as a missing one, both caught dogfooding 2026-07-09/10; lifecycle now lands in the ledger, and `horkos resolve` reconciles the out-of-band cases with its own evidence). Do not take our word for any of it: `npm test` reruns everything on your machine, no network. And when Horkos cannot verify, he says so: [docs/HONEST-NUMBERS.md](docs/HONEST-NUMBERS.md) lists exactly where he loses.
 
 ## CLI
 
 ```
 horkos status                      # caught / verified / handoff counters + last audit
 horkos audit --session <id>        # headless audit (CI, claude -p)
+horkos resolve --session <id> --path <p> --reason "<why>" [--moved-to <p2>]
+                                   # reconcile a truthful write deleted/moved out of band
+                                   # (evidence-gated: verifies ground truth, appends, never edits)
 horkos setup                       # guided, state-aware walkthrough (changes nothing)
 horkos uninstall                   # removes hooks; the ledger is never deleted
 ```

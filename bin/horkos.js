@@ -74,6 +74,69 @@ async function audit(args) {
   process.exit(a.verdict === 'pass' ? 0 : 1);
 }
 
+// Reconciliation: a truthful write whose artifact was later legitimately deleted or
+// moved OUT OF BAND (another session, a file manager, a delete/move the lifecycle
+// rows predate) fails the audit forever with no honest redo. `resolve` closes that
+// gap WITHOUT weakening the oath: it verifies the CURRENT ground truth itself,
+// refuses anything it cannot prove, and appends an append-only reconciliation row
+// (never edits the ledger). It cannot manufacture a write that never happened: the
+// path must have a ledgered ok-receipt write, and a still-existing file is refused
+// outright (the audit judges those directly).
+async function resolveCmd(args) {
+  const sessionId = val(args, '--session');
+  const target = val(args, '--path');
+  const movedTo = val(args, '--moved-to');
+  const reason = val(args, '--reason');
+  if (!sessionId || !target || !reason || !reason.trim()) {
+    console.error('usage: horkos resolve --session <id> --path <path> --reason "<why the artifact legitimately moved or went away>" [--moved-to <newpath>]');
+    process.exit(2);
+  }
+  const { readLedger } = require('../lib/ledger');
+  const { appendJSONL, ledgerPath } = require('../lib/config');
+  const norm = s => String(s).replace(/\\/g, '/').toLowerCase();
+  const nt = norm(target);
+  const ledger = readLedger(sessionId);
+  const writes = ledger.filter(e => !e.lifecycle && e.system === 'fs' && e.target && norm(e.target) === nt);
+  const refuse = (msg) => { console.error('REFUSED: ' + msg); process.exit(1); };
+  if (!writes.length) refuse(`no ledgered write to this path in session ${sessionId}: resolve cannot manufacture a write that never happened.`);
+  if (!writes.some(e => e.receipt && e.receipt.ok)) refuse('the ledgered write(s) to this path did not succeed: resolve only reconciles truthful writes.');
+
+  let evidence;
+  if (movedTo) {
+    let p = movedTo;
+    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
+      const inside = path.join(p, path.basename(target));
+      if (fs.existsSync(inside)) p = inside;
+    }
+    if (!fs.existsSync(p)) refuse(`destination does not exist: ${p}. A move claim needs a live destination.`);
+    const last = writes[writes.length - 1];
+    const stat = fs.statSync(p);
+    if (stat.isDirectory()) {
+      evidence = `destination directory exists: ${p}`;
+    } else {
+      const clean = s => String(s).replace(/\r\n/g, '\n');
+      const probe = clean(last.sent_head || '').slice(0, 120).trim();
+      const content = clean(fs.readFileSync(p, 'utf8'));
+      if (probe && content.includes(probe)) evidence = `destination exists and contains the head of what was written: ${p}`;
+      else if (!probe) evidence = `destination exists (${stat.size} bytes; no head recorded to probe): ${p}`;
+      else if (Number.isFinite(Date.parse(last.ts)) && stat.mtimeMs > Date.parse(last.ts) + 2000) evidence = `destination exists, modified after the recorded write (content unverified): ${p}`;
+      else refuse(`destination ${p} does not contain the head of what was written and was not modified since. That is not this write's artifact.`);
+    }
+  } else {
+    if (fs.existsSync(target)) refuse('the file exists: the audit judges it directly; there is nothing to reconcile.');
+    evidence = 'file absent at resolve time; the ledgered write carried an ok receipt (it truly ran)';
+  }
+
+  const row = { ts: new Date().toISOString(), tool: 'horkos-resolve', system: 'fs', op: 'resolve', target, moved_to: movedTo || null, reason: reason.trim(), evidence, lifecycle: true, receipt: { ok: true } };
+  appendJSONL(ledgerPath(sessionId), row);
+  console.log('RECONCILED (append-only row added; the ledger is never edited):');
+  console.log(`  path     : ${target}`);
+  if (movedTo) console.log(`  moved to : ${movedTo}`);
+  console.log(`  reason   : ${row.reason}`);
+  console.log(`  evidence : ${evidence}`);
+  console.log('The next audit reports this entry as reconciled, citing this row. Receipts keep the full trail.');
+}
+
 // House rule 3: detect installed Demiurge siblings, recommend only what is missing.
 function siblingCheck() {
   const skills = path.join(os.homedir(), '.claude', 'skills');
@@ -89,6 +152,19 @@ function siblingCheck() {
 }
 
 function val(args, flag) { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; }
+
+function delegationCmd(args) {
+  const file = val(args, '--file');
+  if (!file || !fs.existsSync(file)) {
+    console.error('usage: horkos delegation --file <work-unit.json>');
+    process.exit(2);
+  }
+  const input = readJSON(path.resolve(file), null);
+  if (!input) { console.error('invalid delegation JSON: ' + file); process.exit(2); }
+  const result = require('../lib/delegation').auditDelegation(input);
+  console.log(JSON.stringify(result, null, 2));
+  process.exit(result.ok ? 0 : 1);
+}
 
 // Guided setup: state-aware, explains every step in plain language, safe to re-run.
 // Zero-config is the default path; every optional step says what it adds and what you lose without it.
@@ -138,10 +214,13 @@ function setup() {
 }
 
 const [cmd, ...args] = process.argv.slice(2);
-({ install, uninstall, status, setup, audit: () => audit(args) }[cmd] || (() => {
-  console.log('horkos <setup|install|uninstall|status|audit>');
+({ install, uninstall, status, setup, audit: () => audit(args), resolve: () => resolveCmd(args), delegation: () => delegationCmd(args) }[cmd] || (() => {
+  console.log('horkos <setup|install|uninstall|status|audit|resolve|delegation>');
   console.log('  setup      guided, state-aware walkthrough: explains every step, safe to re-run');
   console.log('  install    register PostToolUse ledger + Stop audit hooks in ~/.claude/settings.json');
   console.log('  status     caught / verified / handoff counters + last audit');
   console.log('  audit      headless audit: --session <id> [--transcript <path>] [--receipts out.jsonl]');
+  console.log('  resolve    reconcile a truthful write whose file was legitimately moved/deleted out of band:');
+  console.log('             --session <id> --path <p> --reason "<why>" [--moved-to <newpath>] (evidence-gated, append-only)');
+  console.log('  delegation audit a work-unit authority/review contract: --file <work-unit.json>');
 }))();
