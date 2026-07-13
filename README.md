@@ -93,7 +93,7 @@ Horkos is the fourth exit condition: **the artifact itself.** Re-fetched, hashed
 
 ## Install for your agent
 
-> **From npm:** `npm install -g demiurge-horkos`, then `horkos install` — or `npx demiurge-horkos install` with no install. Source build below.
+> **From npm:** `npm install -g demiurge-horkos`, then `horkos install` Or without installing: `npx demiurge-horkos install`. Source build below.
 
 Horkos ships as live **hooks**, so it installs wherever an agent can run a shell command on tool-use and session-stop.
 
