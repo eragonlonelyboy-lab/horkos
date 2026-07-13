@@ -11,5 +11,6 @@
   "keywords": ["claude-code", "hooks", "agent", "verification", "audit", "stop-hook", "evidence", "demiurge"],
   "author": "Eragon Lee (Demiurge)",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/eragonlonelyboy-lab/horkos" }
+  "repository": { "type": "git", "url": "https://github.com/eragonlonelyboy-lab/horkos" },
+  "files": ["bin", "lib", "hooks", "coverage", "docs", "skills", "CLAUDE.md"]
 }
