@@ -18,7 +18,7 @@
 
 **I am Horkos, the god of oaths.** In the old world I hunted men who swore falsely and made them regret it. The work has not changed; only the liars have. Your coding agent swears an oath every single time it types "✅ Done." Most of the time it tells the truth. I am here for the other times: I make the artifact testify before your session is allowed to end.
 
-**No receipts, no "done."** Zero LLM calls, zero network, 25 benchmarks you can rerun in seconds.
+**No receipts, no "done."** Zero LLM calls, zero network, 59 benchmarks you can rerun in seconds.
 
 ## The coverage check
 
@@ -125,7 +125,7 @@ Reproducible, in-repo, deterministic: `npm test`
 | receipt-only-honest-pass | pass / clean | YES |
 | clean-fs-write | pass / clean | YES |
 
-Those are the six core catches. The full suite is **46/46**: every false positive Horkos hit while auditing its own build became a scenario, with a control case proving each fix cannot be gamed (the newest classes: a SUBAGENT deleting a truthfully written file where only the main transcript was checked, and a moved artifact reading as a missing one, both caught dogfooding 2026-07-09/10; lifecycle now lands in the ledger, and `horkos resolve` reconciles the out-of-band cases with its own evidence). Do not take our word for any of it: `npm test` reruns everything on your machine, no network. And when Horkos cannot verify, he says so: [docs/HONEST-NUMBERS.md](docs/HONEST-NUMBERS.md) lists exactly where he loses.
+Those are the six core catches. The full suite is **59/59**: every false positive Horkos hit while auditing its own build became a scenario, with a control case proving each fix cannot be gamed (the newest class: a read-only capability inventory that explicitly disclaimed writes ("no add/update/delete") yet audited as one, because a slash-delimited negated verb list left a verb unmasked, caught dogfooding 2026-07-15; earlier ones include a SUBAGENT deleting a truthfully written file and a moved artifact reading as a missing one; lifecycle now lands in the ledger, and `horkos resolve` reconciles the out-of-band cases with its own evidence). Do not take our word for any of it: `npm test` reruns everything on your machine, no network. And when Horkos cannot verify, he says so: [docs/HONEST-NUMBERS.md](docs/HONEST-NUMBERS.md) lists exactly where he loses.
 
 ## CLI
 
